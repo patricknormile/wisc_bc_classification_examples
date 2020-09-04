@@ -53,6 +53,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 
 from sklearn.model_selection import GridSearchCV as CV
 
@@ -63,7 +64,7 @@ from sklearn.metrics import classification_report as CR
 """
  logreg
 """
-LR = LogisticRegression(random_state = SEED, solver='liblinear', max_iter=500)
+LR = LogisticRegression(random_state = SEED+1, solver='liblinear', max_iter=500)
 LR.get_params()
 
 LR.fit(X_train, y_train)
@@ -80,6 +81,46 @@ LR_CR = CR(y_test, y_pred_LR, output_dict=True)
 LR_F1 = LR_CR['weighted avg']['f1-score']
 #logreg does really well here
 
+
+
+# In[]
+
+"""
+SVM classifier
+"""
+SVM = SVC()
+#note: parameter degree ignored for all kernels except poly
+#this tuning takes forever
+
+#SVM_hyp = {
+            #'C' : [0.2, 0.5, 1.0, 2.0],
+ #           'kernel' : ['linear','poly','sigmoid'],
+            #'degree' : [2,3,4]
+     #   }
+
+#SVM_CV = CV(estimator = SVM,
+#            param_grid = SVM_hyp,
+#            scoring = 'accuracy',
+#            cv = 5)
+
+#SVM_CV.fit(X_train, y_train)
+SVM.fit(X_train, y_train)
+# In[]
+
+#SVM_best = SVM_CV.best_estimator_
+SVM_best = SVM
+print(SVM_best.get_params())
+
+y_pred_SVM = SVM_best.predict(X_test)
+
+# In[]
+
+SVM_acc = accuracy_score(y_test, y_pred_SVM)
+SVM_CR = CR(y_test, y_pred_SVM, output_dict = True)
+print(SVM_acc)
+print(SVM_CR)
+print(SVM_CR['weighted avg']['f1-score'])
+ 
 # In[]
 
 """
@@ -187,8 +228,9 @@ ensemble
 """
 from sklearn.ensemble import VotingClassifier as VC
 
-classifiers = [('Logistic Regression', LR), ('Classification Tree', DT),
-               ('K Nearest Neighbours', KNN), ('Naive Bayes', NB)]
+classifiers = [('Logistic Regression', LR), ('Classification Tree', DT_best),
+               ('K Nearest Neighbours', KNN_best), ('Naive Bayes', NB),
+               ('SVM', SVM_best)]
 
 
 vc1 = VC(estimators=classifiers)     
@@ -209,7 +251,8 @@ print('Voting Classifier: {:.3f}'.format(accuracy))
 ensemble without logreg
 """
 classifiers = [('Classification Tree', DT),
-               ('K Nearest Neighbours', KNN), ('Naive Bayes', NB)]
+               ('K Nearest Neighbours', KNN), ('Naive Bayes', NB),
+               ('SVM', SVM_best)]
 
 vc2 = VC(estimators=classifiers)     
 
@@ -223,4 +266,4 @@ y_pred_vc2 = vc2.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred_vc2)
 print('Voting Classifier: {:.3f}'.format(accuracy))
 
-#does better than DT, KNN, NB on their own, LR on its own still superior in this example
+#does better than DT, KNN, SVM, NB on their own, LR on its own still superior in this example
